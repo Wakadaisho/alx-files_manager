@@ -15,8 +15,8 @@ class UserController {
       return res.status(400).send({ error: 'Missing password' });
     }
 
-    const userExists = await dbClient.getUser({ email });
-    if (userExists) {
+    const user = await dbClient.getUser({ email });
+    if (user) {
       return res.status(400).send({ error: 'Already exist' });
     }
 

@@ -29,6 +29,18 @@ class DBClient {
   async createUser(data) {
     return this.client.db(dbName).collection('users').insertOne(data);
   }
+
+  async getFile(query) {
+    return this.client.db(dbName).collection('files').findOne(query);
+  }
+
+  async createFile(data) {
+    return this.client.db(dbName).collection('files').insertOne(data);
+  }
+
+  async getFileByParentId(query) {
+    return this.client.db(dbName).collection('files').find(query).toArray();
+  }
 }
 
 const dbClient = new DBClient();
