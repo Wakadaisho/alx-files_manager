@@ -20,20 +20,14 @@ class FilesController {
 
     if (!user) return res.status(401).send({ error: 'Unauthorized' });
 
-    const {
-      name,
-      type,
-      parentId = 0,
-      isPublic = false,
-      data,
-    } = req.body;
+    const { name, type, parentId = 0, isPublic = false, data } = req.body;
 
     if (!name) return res.status(400).send({ error: 'Missing name' });
 
     if (!type) return res.status(400).send({ error: 'Missing type' });
 
     if (!FilesController.getFileTypes().includes(type)) {
-      return res.status(400).send({ error: 'Missing type' });
+      return res.status(400).send({ error: 'Invalid type' });
     }
 
     if (!data && type !== 'folder') {
@@ -41,8 +35,10 @@ class FilesController {
     }
 
     if (parentId) {
-      const parent = await dbClient.getFile({ _id: parentId });
+      const parent = await dbClient.getFile({ _id: ObjectId(parentId) });
+
       if (!parent) return res.status(400).send({ error: 'Parent not found' });
+
       if (parent.type !== 'folder') {
         return res.status(400).send({ error: 'Parent is not a folder' });
       }
@@ -50,7 +46,7 @@ class FilesController {
 
     if (type !== 'folder') {
       fs.mkdirSync(FOLDER_PATH, { recursive: true });
-      fs.writeFileSync(`${FOLDER_PATH}/${uuidv4()}`, data);
+      fs.writeFileSync(`${FOLDER_PATH}/${uuidv4()}`, data, 'base64');
     }
 
     const { ops } = await dbClient.createFile({
@@ -59,7 +55,6 @@ class FilesController {
       type,
       parentId,
       isPublic,
-      data,
     });
 
     return res.status(201).send({
@@ -80,7 +75,10 @@ class FilesController {
 
     if (!user) return res.status(401).send({ error: 'Unauthorized' });
 
-    const file = await dbClient.getFile({ _id: req.params.id, userId: user._id });
+    const file = await dbClient.getFile({
+      _id: ObjectId(req.params.id),
+      userId: user._id,
+    });
 
     if (!file) return res.status(404).send({ error: 'Not found' });
 
@@ -104,9 +102,9 @@ class FilesController {
 
     const { parentId = 0 } = req.query;
 
-    const parent = await dbClient.getFile({ parentId });
+    const parent = await dbClient.getFile({ _id: parentId });
 
-    if (parent && parent.type !== 'folder') {
+    if (!parent || parent.type !== 'folder') {
       return res.status(200).send([]);
     }
 

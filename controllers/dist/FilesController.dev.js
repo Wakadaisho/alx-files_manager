@@ -108,7 +108,7 @@ function () {
               }
 
               return _context.abrupt("return", res.status(400).send({
-                error: 'Missing type'
+                error: 'Invalid type'
               }));
 
             case 19:
@@ -129,7 +129,7 @@ function () {
 
               _context.next = 24;
               return regeneratorRuntime.awrap(_db["default"].getFile({
-                _id: parentId
+                _id: (0, _mongodb.ObjectId)(parentId)
               }));
 
             case 24:
@@ -160,7 +160,7 @@ function () {
                   recursive: true
                 });
 
-                _fs["default"].writeFileSync("".concat(FOLDER_PATH, "/").concat((0, _uuid.v4)()), data);
+                _fs["default"].writeFileSync("".concat(FOLDER_PATH, "/").concat((0, _uuid.v4)()), data, 'base64');
               }
 
               _context.next = 32;
@@ -169,8 +169,7 @@ function () {
                 name: name,
                 type: type,
                 parentId: parentId,
-                isPublic: isPublic,
-                data: data
+                isPublic: isPublic
               }));
 
             case 32:
@@ -236,7 +235,7 @@ function () {
             case 11:
               _context2.next = 13;
               return regeneratorRuntime.awrap(_db["default"].getFile({
-                _id: req.params.id,
+                _id: (0, _mongodb.ObjectId)(req.params.id),
                 userId: user._id
               }));
 
@@ -315,13 +314,13 @@ function () {
               _req$query$parentId = req.query.parentId, parentId = _req$query$parentId === void 0 ? 0 : _req$query$parentId;
               _context3.next = 14;
               return regeneratorRuntime.awrap(_db["default"].getFile({
-                parentId: parentId
+                _id: parentId
               }));
 
             case 14:
               parent = _context3.sent;
 
-              if (!(parent && parent.type !== 'folder')) {
+              if (!(!parent || parent.type !== 'folder')) {
                 _context3.next = 17;
                 break;
               }
