@@ -1,5 +1,5 @@
 import AppController from '../controllers/AppController';
-import UserController from '../controllers/UserController';
+import UsersController from '../controllers/UsersController';
 import AuthController from '../controllers/AuthController';
 import FilesController from '../controllers/FilesController';
 
@@ -9,8 +9,8 @@ export default (app) => {
   app.get('/stats', AppController.getStats);
 
   // UserController
-  app.post('/users', UserController.postNew);
-  app.get('/users/me', UserController.getMe);
+  app.post('/users', UsersController.postNew);
+  app.get('/users/me', UsersController.getMe);
 
   // AuthController
   app.get('/connect', AuthController.getConnect);
