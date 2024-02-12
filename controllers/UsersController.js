@@ -34,21 +34,20 @@ class UserController {
     const key = `auth_${token}`;
     const userId = await redisClient.get(key);
 
-    if (userId) {
-      const users = dbClient.db.collection('users');
-      const idObject = new ObjectId(userId);
-
-      users.findOne({ _id: idObject }, (err, user) => {
-        if (user) {
-          res.status(200).json({ id: userId, email: user.email });
-        } else {
-          res.status(401).json({ error: 'Unauthorized' });
-        }
-      });
-    } else {
-      console.log('Token not found!');
-      res.status(401).json({ error: 'Unauthorized' });
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
+
+    const users = dbClient.db.collection('users');
+    const idObject = new ObjectId(userId);
+
+    users.findOne({ _id: idObject }, (err, user) => {
+      if (user) {
+        res.status(200).json({ id: userId, email: user.email });
+      } else {
+        res.status(401).json({ error: 'Unauthorized' });
+      }
+    });
   }
 }
 
