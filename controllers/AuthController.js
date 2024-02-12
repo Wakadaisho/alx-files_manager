@@ -4,11 +4,11 @@ import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
 class AuthController {
-  static async getConnect(request, response) {
-    const authData = request.header('Authorization');
+  static async getConnect(req, res) {
+    const authData = req.header('Authorization');
 
     if (!authData || !authData.startsWith('Basic ')) {
-      response.status(401).json({ error: 'Invalid credentials format' });
+      res.status(401).json({ error: 'Invalid credentials format' });
       return;
     }
 
@@ -17,7 +17,7 @@ class AuthController {
     const [email, password] = credentials.split(':');
 
     if (!email || !password) {
-      response.status(401).json({ error: 'Unauthorized' });
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
 
@@ -29,28 +29,24 @@ class AuthController {
         const token = uuidv4();
         const key = `auth_${token}`;
         await redisClient.set(key, user._id.toString(), 60 * 60 * 24);
-        response.status(200).json({ token });
+        res.status(200).json({ token });
       } else {
-        response.status(401).json({ error: 'Unauthorized' });
+        res.status(401).json({ error: 'Unauthorized' });
       }
     });
   }
 
   static async getDisconnect(req, res) {
-    const apiToken = req.header('X-Token');
+    const token = req.header('X-Token');
+    const key = `auth_${token}`;
+    const id = await redisClient.get(key);
 
-    if (!apiToken) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    if (id) {
+      await redisClient.del(key);
+      res.status(204).json({});
+    } else {
+      res.status(401).json({ error: 'Unauthorized' });
     }
-
-    const userId = await redisClient.get(`auth_${apiToken}`);
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    await redisClient.del(`auth_${apiToken}`);
-    return res.status(204).send();
   }
 }
 
