@@ -29,28 +29,31 @@ class UserController {
     return res.status(201).send({ id: ops[0]._id, email: ops[0].email });
   }
 
-  static async getMe(req, res) {
-    const token = req.header('X-Token');
-    const key = `auth_${token}`;
-    const userId = await redisClient.get(key);
+  static async getMe(request, response) {
+    try {
+      const token = request.header('X-Token');
+      const key = `auth_${token}`;
+      const userId = await redisClient.get(key);
 
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      if (!userId) {
+        console.log('Token not found!');
+        return response.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const users = dbClient.db.collection('users');
+      const idObject = new ObjectId(userId);
+      const user = await users.findOne({ _id: idObject });
+
+      if (user) {
+        response.status(200).json({ id: userId, email: user.email });
+      } else {
+        response.status(401).json({ error: 'Unauthorized' });
+      }
+      return null;
+    } catch (error) {
+      console.error('Error in getMe:', error);
+      return response.status(500).json({ error: 'Internal Server Error' });
     }
-
-    const users = dbClient.db.collection('users');
-    const idObject = new ObjectId(userId);
-
-    return new Promise((resolve) => {
-      users.findOne({ _id: idObject }, (err, user) => {
-        if (user) {
-          res.status(200).json({ id: userId, email: user.email });
-        } else {
-          res.status(401).json({ error: 'Unauthorized' });
-        }
-        resolve();
-      });
-    });
   }
 }
 
