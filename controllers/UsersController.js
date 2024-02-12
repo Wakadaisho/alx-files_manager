@@ -41,12 +41,15 @@ class UserController {
     const users = dbClient.db.collection('users');
     const idObject = new ObjectId(userId);
 
-    users.findOne({ _id: idObject }, (err, user) => {
-      if (user) {
-        res.status(200).json({ id: userId, email: user.email });
-      } else {
-        res.status(401).json({ error: 'Unauthorized' });
-      }
+    return new Promise((resolve) => {
+      users.findOne({ _id: idObject }, (err, user) => {
+        if (user) {
+          res.status(200).json({ id: userId, email: user.email });
+        } else {
+          res.status(401).json({ error: 'Unauthorized' });
+        }
+        resolve();
+      });
     });
   }
 }
