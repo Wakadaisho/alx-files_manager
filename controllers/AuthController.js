@@ -16,12 +16,13 @@ class AuthController {
       .split(':');
 
     const hashedPassword = sha1(password);
-    const user = await dbClient.getUser({ email, password: hashedPassword });
+    const user = await dbClient.getUserByQuery({ email, password: hashedPassword });
 
     if (!user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    console.log('authController user', user._id.toString());
     const token = uuidv4();
     const key = `auth_${token}`;
     await redisClient.set(key, user._id.toString(), 24 * 60 * 60);

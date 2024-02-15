@@ -1,10 +1,12 @@
 import sha1 from 'sha1';
-import { ObjectId } from 'mongodb';
+import Bull from 'bull';
 
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
-class UserController {
+const userQueue = new Bull('userQueue');
+
+class UsersController {
   static async postNew(req, res) {
     const { email, password } = req.body;
 
@@ -15,7 +17,7 @@ class UserController {
       return res.status(400).send({ error: 'Missing password' });
     }
 
-    const user = await dbClient.getUser({ email });
+    const user = await dbClient.getUserByQuery({ email });
     if (user) {
       return res.status(400).send({ error: 'Already exist' });
     }
@@ -26,35 +28,21 @@ class UserController {
       password: hashedPassword,
     });
 
+    userQueue.add({ userId: ops[0]._id.toString(), email: ops[0].email });
     return res.status(201).send({ id: ops[0]._id, email: ops[0].email });
   }
 
   static async getMe(request, response) {
-    try {
-      const token = request.header('X-Token');
-      const key = `auth_${token}`;
-      const userId = await redisClient.get(key);
+    const token = request.header('X-Token');
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
 
-      if (!userId) {
-        console.log('Token not found!');
-        return response.status(401).json({ error: 'Unauthorized' });
-      }
+    if (!userId) return response.status(401).json({ error: 'Unauthorized' });
 
-      const users = dbClient.db.collection('users');
-      const idObject = new ObjectId(userId);
-      const user = await users.findOne({ _id: idObject });
+    const user = await dbClient.getUser(userId);
 
-      if (user) {
-        response.status(200).json({ id: userId, email: user.email });
-      } else {
-        response.status(401).json({ error: 'Unauthorized' });
-      }
-      return null;
-    } catch (error) {
-      console.error('Error in getMe:', error);
-      return response.status(500).json({ error: 'Internal Server Error' });
-    }
+    return response.status(200).send({ id: user._id, email: user.email });
   }
 }
 
-module.exports = UserController;
+module.exports = UsersController;
